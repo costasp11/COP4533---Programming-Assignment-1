@@ -70,6 +70,52 @@ def validate_input(n, hospital_prefs, student_prefs):
     if len(hospital_prefs) != n or len(student_prefs) != n:
         return False, "INVALID: hospital and student counts don't match n"
     return True, "valid"
+
+# PART B: Verifier
+def verify(n, hospitals, students, hospital_pairs):
+    # check each hospital is matched to exactly one student
+    if len(hospital_pairs) != n:
+        return "INVALID: not all hospitals are matched"
+    
+    matched_students = []
+    
+    for h, s in enumerate(hospital_pairs):
+        if s is None:
+            return f"INVALID: hospital {h + 1} is not matched"
+        if s < 0 or s >= n:
+            return f"INVALID: hospital {h + 1} matched to invalid student {s + 1}"
+        if s in matched_students:
+            return f"INVALID: student {s + 1} is matched to multiple hospitals"
+        matched_students.append(s)
+    
+    # check all students are matched (no missing)
+    if len(matched_students) != n:
+        return "INVALID: not all students are matched"
+    
+    # check no blocking pairs
+    for h in range(n):
+        current_s = hospital_pairs[h]
+        h_rank_of_current = hospitals[h].index(current_s)
+        
+        # check all students prefer their current 
+        for i in range(h_rank_of_current):
+            s = hospitals[h][i]  # hospital h prefers this student over current match
+            
+            # Find which hospital this student is matched to
+            other_h = None
+            for h2, s2 in enumerate(hospital_pairs):
+                if s2 == s:
+                    other_h = h2
+                    break
+            
+            # Does student s prefer hospital h over their current match?
+            s_rank_of_h = students[s].index(h)
+            s_rank_of_other = students[s].index(other_h)
+            
+            if s_rank_of_h < s_rank_of_other:
+                return f"UNSTABLE: blocking pair hospital {h + 1} and student {s + 1}"
+    
+    return "VALID STABLE"
     
  
 if __name__ == "__main__":
@@ -86,3 +132,14 @@ if __name__ == "__main__":
         output = format_output(hospital_pairs)
         for line in output:
             print(line)
+            
+        # also write to file output, example.out
+        with open("outputs/example.out", "w") as f:
+            for line in output:
+                f.write(line +"\n")
+                
+        # Run verifier
+        result = verify(n, hospital_prefs, student_prefs, hospital_pairs)
+        print(f"\nVerifier: {result}")
+                
+        
